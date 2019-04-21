@@ -139,7 +139,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         // If no address found then address is replaced with date
-        if (address.equals("")) {
+        if (address.equals("") || address.equals("Unnamed Road")) {
             Toast.makeText(this,"No Address Exists At This Location!",Toast.LENGTH_SHORT).show();
 
         }else {
