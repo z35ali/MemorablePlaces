@@ -114,35 +114,37 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 final int itemToDelete = position;
+                if (itemToDelete != 0) {
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setTitle("Are you sure?")
+                            .setMessage("Do you want to delete this place?")
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    places.remove(itemToDelete);
+                                    arrayAdapter.notifyDataSetChanged();
 
-                new AlertDialog.Builder(MainActivity.this)
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .setTitle("Are you sure?")
-                        .setMessage("Do you want to delete this place?")
-                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                places.remove(itemToDelete);
-                                arrayAdapter.notifyDataSetChanged();
+                                    HashSet<String> set = new HashSet<>(MainActivity.places);
+                                    sharedPreferences.edit().putStringSet("placesList", set).apply();
+                                    final Toast toast = Toast.makeText(getApplicationContext(), "Place Deleted",
+                                            Toast.LENGTH_SHORT);
+                                    toast.show();
+                                    Handler handler = new Handler();
+                                    handler.postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            toast.cancel();
+                                        }
+                                    }, 800);
+                                }
+                            })
+                            .setNegativeButton("No", null)
+                            .show();
+                }
 
-                                HashSet<String> set = new HashSet<>(MainActivity.places);
-                                sharedPreferences.edit().putStringSet("placesList", set).apply();
-                                final Toast toast = Toast.makeText(getApplicationContext(), "Place Deleted",
-                                        Toast.LENGTH_SHORT);
-                                toast.show();
-                                Handler handler = new Handler();
-                                handler.postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        toast.cancel();
-                                    }
-                                }, 800);
-                            }
-                        })
-                        .setNegativeButton("No",null)
-                        .show();
+                    return true;
 
-                return true;
             }
         });
     }
