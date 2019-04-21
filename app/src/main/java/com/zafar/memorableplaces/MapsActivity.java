@@ -3,17 +3,20 @@ package com.zafar.memorableplaces;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -25,8 +28,11 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+
+import static com.zafar.memorableplaces.MainActivity.sharedPreferences;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLongClickListener {
 
@@ -36,6 +42,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     // Zoom camera on certain location on Google Map
     public void zoomOnLocation(Location location, String title) {
+
+        Log.d("asda", "asda");
 
         if (location != null) {
             LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
@@ -74,7 +82,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnMapLongClickListener(this);
 
         Intent intent = getIntent();
-        if (intent.getIntExtra("placeID",0) == 0) {
+        if (intent.getIntExtra("placeID", 0) == 0) {
             // Zoom in on user location
             locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
             locationListener = new LocationListener() {
@@ -99,21 +107,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             };
 
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,locationListener);
-                Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                zoomOnLocation(lastKnownLocation, "Your Location");
-            } else {
-                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1);
-            }
-        } else {
-            Location placeLocation = new Location(LocationManager.GPS_PROVIDER);
-            placeLocation.setLatitude(MainActivity.locations.get(intent.getIntExtra("placeID",0)).latitude);
-            placeLocation.setLongitude(MainActivity.locations.get(intent.getIntExtra("placeID",0)).longitude);
 
-            zoomOnLocation(placeLocation, MainActivity.places.get(intent.getIntExtra("placeID",0)));
         }
     }
+
+
 
     @Override
     public void onMapLongClick(LatLng latLng) {
@@ -125,6 +123,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         try {
 
             List<Address> listAdddresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude,1);
+
 
             if (listAdddresses != null && listAdddresses.size() > 0) {
                 if (listAdddresses.get(0).getThoroughfare() != null) {
@@ -141,17 +140,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // If no address found then address is replaced with date
         if (address.equals("")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm yyyy-MM-dd");
-            address += sdf.format(new Date());
+            Toast.makeText(this,"No Address Exists At This Location!",Toast.LENGTH_SHORT).show();
+
+        }else {
+
+            mMap.addMarker(new MarkerOptions().position(latLng).title(address));
+            final Location temp = new Location(LocationManager.GPS_PROVIDER);
+            temp.setLatitude(latLng.latitude);
+            temp.setLongitude(latLng.longitude);
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+
+                    zoomOnLocation(temp,"location");                }
+            }, 3000);
+
+
+
+            MainActivity.places.add(address);
+
+            SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("com.zafar.memorableplaces", Context.MODE_PRIVATE);
+            HashSet<String> set = new HashSet<>(MainActivity.places);
+            sharedPreferences.edit().putStringSet("placesList", set).apply();
+
+
+
+            MainActivity.arrayAdapter.notifyDataSetChanged();
+
+            Toast.makeText(this, "Address Added! Zooming In Within 3 Seconds!", Toast.LENGTH_SHORT).show();
+
         }
-
-        mMap.addMarker(new MarkerOptions().position(latLng).title(address));
-
-        MainActivity.places.add(address);
-        MainActivity.locations.add(latLng);
-
-        MainActivity.arrayAdapter.notifyDataSetChanged();
-
-        Toast.makeText(this,"Location Added!",Toast.LENGTH_SHORT).show();
     }
+
 }
