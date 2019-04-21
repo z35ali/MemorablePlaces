@@ -178,8 +178,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // If no address found then address is replaced with date
         if (address.equals("") || address.equals("Unnamed Road")) {
             Toast.makeText(this,"No Address Exists At This Location!",Toast.LENGTH_SHORT).show();
+            address += "NO ADDRESS FOUND";
 
-        }else {
+        }
 
             mMap.addMarker(new MarkerOptions().position(latLng).title(address));
             final Location temp = new Location(LocationManager.GPS_PROVIDER);
@@ -206,9 +207,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             MainActivity.arrayAdapter.notifyDataSetChanged();
 
-            Toast.makeText(this, "Address Added! Zooming In Within 3 Seconds!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Place Added! Zooming In 3 Seconds!", Toast.LENGTH_SHORT).show();
 
-        }
+
     }
 
 }
