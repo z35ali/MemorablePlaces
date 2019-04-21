@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -23,11 +24,13 @@ import com.google.android.gms.maps.model.LatLng;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Scanner;
 
 public class MainActivity extends AppCompatActivity {
     static ArrayList<String> places = new ArrayList<String>();
     static ArrayAdapter arrayAdapter;
     static SharedPreferences sharedPreferences;
+
     static HashSet<String> set;
     ListView listView;
     @Override
@@ -51,6 +54,11 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+
+
+
+
+
         // Makes sure that Adding A New Memorable Place is at the top of the list
         for(int i=0;i<places.size();i++){
             if(this.places.get(i).equals("Add A New Memorable Place...")){
@@ -72,12 +80,33 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (position == 0) {
+
+                double latDouble = 0.0;
+                double longDouble = 0.0;
+                String address = "";
+                if(position !=0){
+                    Scanner scan = new Scanner((String)parent.getItemAtPosition(position));
+                    scan.useDelimiter(":");
+                    scan.next();
+                    address = scan.next().trim();
+                    address = address.substring(0, address.length() - 3);
+                    String latitude = scan.next().trim();
+                    latitude = latitude.substring(0,latitude.length()-5);
+                    String longitude = scan.next().trim();
+                    longitude = longitude.substring(0, latitude.length() - 1);
+                    latDouble = Double.parseDouble(latitude);
+                    longDouble = Double.parseDouble(longitude);
+                }
                     Intent intent = new Intent(MainActivity.this, MapsActivity.class);
 
-                    intent.putExtra("placeID", position);
-                    startActivity(intent);
-                }
+
+                intent.putExtra("placeID", position);
+                intent.putExtra("long", longDouble);
+                intent.putExtra("lat", latDouble);
+                intent.putExtra("address", address);
+
+                startActivity(intent);
+
             }
         });
 

@@ -23,6 +23,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -39,15 +41,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     LocationManager locationManager;
     LocationListener locationListener;
     private GoogleMap mMap;
+    BitmapDescriptor bitmapDescriptor;
+
 
     // Zoom camera on certain location on Google Map
     public void zoomOnLocation(Location location, String title) {
 
-        Log.d("asda", "asda");
 
         if (location != null) {
+
+
             LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
-            mMap.addMarker(new MarkerOptions().position(userLocation).title(title));
+            if (title.equals("Your Location")) {
+                mMap.addMarker(new MarkerOptions().position(userLocation).title(title).icon(bitmapDescriptor));
+            }else{
+                mMap.addMarker(new MarkerOptions().position(userLocation).title(title));
+
+            }
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 12));
         }
     }
@@ -73,6 +83,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        bitmapDescriptor = BitmapDescriptorFactory.defaultMarker(
+                BitmapDescriptorFactory.HUE_AZURE);
     }
 
     @Override
@@ -108,6 +120,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             };
 
 
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,locationListener);
+                Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                zoomOnLocation(lastKnownLocation, "Your Location");
+            } else {
+                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1);
+            }
+        } else {
+            Location placeLocation = new Location(LocationManager.GPS_PROVIDER);
+            double latitude = intent.getDoubleExtra("lat",0.0);
+            double longitude = intent.getDoubleExtra("long",0.0);
+            String address = intent.getStringExtra("address");
+
+
+
+
+           placeLocation.setLatitude(latitude);
+           placeLocation.setLongitude(longitude);
+
+
+
+
+            zoomOnLocation(placeLocation, address);
         }
     }
 
@@ -119,18 +154,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
 
         String address = "";
+        String country = "";
 
         try {
 
-            List<Address> listAdddresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude,1);
+            List<Address> listAddresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude,1);
 
 
-            if (listAdddresses != null && listAdddresses.size() > 0) {
-                if (listAdddresses.get(0).getThoroughfare() != null) {
-                    if (listAdddresses.get(0).getSubThoroughfare() != null) {
-                        address += listAdddresses.get(0).getSubThoroughfare() + " ";
+            if (listAddresses != null && listAddresses.size() > 0) {
+                if (listAddresses.get(0).getThoroughfare() != null) {
+                    if (listAddresses.get(0).getSubThoroughfare() != null) {
+                        address += listAddresses.get(0).getSubThoroughfare() + " ";
                     }
-                    address += listAdddresses.get(0).getThoroughfare();
+                    address += listAddresses.get(0).getThoroughfare();
+                    country += listAddresses.get(0).getCountryName();
                 }
             }
 
@@ -158,7 +195,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 
-            MainActivity.places.add(address);
+            MainActivity.places.add("Address: "+address+ " \nLat: "+latLng.latitude+" \nLong: "+latLng.longitude + "\nCountry: "+country);
+
 
             SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("com.zafar.memorableplaces", Context.MODE_PRIVATE);
             HashSet<String> set = new HashSet<>(MainActivity.places);
